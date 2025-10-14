@@ -1,0 +1,38 @@
+// omp: Observability Meta Protocol 可观测元数据协议。
+// v3.0.0
+syntax = "proto3";
+package model.v3;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "model";
+option java_package = "com.tencent.galileo.proto";
+option (gogoproto.goproto_sizecache_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_unrecognized_all) = false;
+
+message RPCLabels {
+  enum FieldName {
+    rpc_caller_service = 0;
+    rpc_caller_method = 1;
+    rpc_caller_set = 2;
+    rpc_caller_ip = 3;
+    rpc_caller_container = 4;
+    rpc_callee_service = 5;
+    rpc_callee_method = 6;
+    rpc_callee_set = 7;
+    rpc_callee_ip = 8;
+    rpc_callee_container = 9;
+    rpc_error_code = 10;
+    rpc_error_code_type = 11;
+    rpc_caller_group = 13;
+    rpc_user_ext1 = 14;
+    rpc_user_ext2 = 15;
+    rpc_user_ext3 = 16;
+    rpc_caller_server = 18;
+    rpc_callee_server = 20;
+    rpc_canary = 21;
+    rpc_flow_tag = 22;
+    max_field = 23;
+  }
+}

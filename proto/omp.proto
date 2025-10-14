@@ -1,0 +1,171 @@
+// omp: Observability Meta Protocol 可观测元数据协议。
+// 文档见 omp.yaml
+syntax = "proto3";
+package model;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "model";
+option java_package = "com.tencent.galileo.proto";
+option (gogoproto.goproto_sizecache_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_unrecognized_all) = false;
+
+// Aggregation 指标聚合方式。
+enum Aggregation {
+  AGGREGATION_NONE = 0; // 未指定
+  AGGREGATION_SET = 1; // 瞬时值
+  AGGREGATION_SUM = 2; // 求和
+  AGGREGATION_AVG = 3; // 求平均值
+  AGGREGATION_MAX = 4; // 求最大值
+  AGGREGATION_MIN = 5; // 求最小值
+  AGGREGATION_HISTOGRAM = 6; // 直方图统计
+  AGGREGATION_COUNTER = 7; // counter 统计
+  // Deprecated: 仅限伽利略内部兼容 prometheus 用，其他任何地方不能使用此类型，请使用 AGGREGATION_HISTOGRAM
+  AGGREGATION_PROMETHEUS_HISTOGRAM = 8;
+  // Deprecated: 仅限伽利略内部兼容 prometheus 用，其他任何地方不能使用此类型，请使用 AGGREGATION_COUNTER
+  AGGREGATION_PROMETHEUS_COUNTER = 9;
+  MAX_AGGREGATION = 10; // 用于循环终止判断
+}
+
+// ClientMetrics 客户端 (主调方上报) 的指标。
+message ClientMetrics {
+  enum MetricName {
+    // 注意，字段名希望能保持原始名字，方便反射使用，所以枚举时不使用通常的命名规范。
+    // 此处使用枚举，方便遍历，写代码时相对方便，减少重复代码。
+    rpc_client_started_total = 0; // 客户端（主调方上报）发出的请求量。
+    rpc_client_handled_total = 1; // 客户端（主调方上报）处理完成的请求量。
+    // 客户端（主调方上报）处理完成时耗时分布，单位：秒。
+    rpc_client_handled_seconds = 2;
+    rpc_client_metrics_point_count = 3; // 用于循环终止判断。
+  }
+  message Metric {
+    MetricName name = 1;
+    double value = 2;
+    Aggregation aggregation = 3;
+  }
+  repeated Metric metrics = 1 [(gogoproto.nullable) = false];
+  RPCLabels rpc_labels = 2 [(gogoproto.nullable) = false];
+}
+
+// ServerMetrics 服务端（被调方）上报的指标。
+message ServerMetrics {
+  enum MetricName {
+    // 注意，字段名希望能保持原始名字，方便反射使用，所以枚举时不使用通常的命名规范。
+    // 此处使用枚举，方便遍历，写代码时相对方便，减少重复代码。
+    rpc_server_started_total = 0; // 服务端（被调方上报）接收到的请求量。
+    rpc_server_handled_total = 1; // 服务端（被调方上报）处理完成的请求量。
+    // 服务端（被调方上报）处理完成的耗时分布，单位：秒。
+    rpc_server_handled_seconds = 2;
+    rpc_server_metrics_point_count = 3; // 用于循环终止判断。
+  }
+  message Metric {
+    MetricName name = 1;
+    double value = 2;
+    Aggregation aggregation = 3;
+  }
+  repeated Metric metrics = 1 [(gogoproto.nullable) = false];
+  RPCLabels rpc_labels = 2 [(gogoproto.nullable) = false];
+}
+
+// RPCLabels RPC 指标的标签。
+message RPCLabels {
+  enum FieldName {
+    // 注意，字段名希望能保持原始名字，方便反射使用，所以枚举时不使用通常的命名规范。
+    // 此处使用枚举，方便遍历，写代码时相对方便，减少重复代码。
+    caller_service = 0;
+    caller_method = 1;
+    caller_con_setid = 2;
+    caller_ip = 3;
+    caller_container = 4;
+    callee_service = 5;
+    callee_method = 6;
+    callee_con_setid = 7;
+    callee_ip = 8;
+    callee_container = 9;
+    code = 10;
+    code_type = 11;
+    //    code_desc = 12;     //此字段已经废弃
+    caller_group = 13;
+    user_ext1 = 14;
+    user_ext2 = 15;
+    user_ext3 = 16;
+    caller_target = 17;
+    caller_server = 18;
+    callee_target = 19;
+    callee_server = 20;
+    // 金丝雀标签
+    canary = 21;
+    // 流量标签，标记此流量是灰度、降级、重试等
+    flow_tag = 22;
+    max_field = 23; // 用于循环终止判断。
+  }
+  message Field {
+    FieldName name = 1;
+    string value = 2;
+  }
+  repeated Field fields = 1 [(gogoproto.nullable) = false];
+}
+
+// NormalLabels 一般监控都有的标签。
+message NormalLabels {
+  enum FieldName {
+    // 注意，字段名希望能保持原始名字，方便反射使用，所以枚举时不使用通常的命名规范。
+    // 此处使用枚举，方便遍历，写代码时相对方便，减少重复代码。
+    // 新增字段时后台不需要变更代码，只需要更新协议发布即可。
+    target = 0;
+    namespace = 1;
+    env_name = 2;
+    // region，历史原因，此字段实际是容器集群 (con_setid)
+    region = 3;
+    instance = 4;
+    node = 5;
+    container_name = 6;
+    version = 7;
+    // 城市
+    city = 8;
+    // SDK 名字
+    sdk_name = 9;
+    // 发布版本，用于 CD 可观测
+    release_version = 10;
+    // 组织 ID
+    organization_id = 11;
+    max_field = 12; // 用于循环终止判断。
+  }
+  message Field {
+    FieldName name = 1;
+    string value = 2;
+  }
+  repeated Field fields = 1 [(gogoproto.nullable) = false];
+}
+
+// NormalMetric 一般属性监控指标，无维度。
+message NormalMetric {
+  Metric metric = 1 [(gogoproto.nullable) = false];
+}
+
+// Metric 指标
+message Metric {
+  string name = 1; // 指标名。
+  double value = 2; // 一般指标值。
+  Aggregation aggregation = 3; // 指标聚合方式。
+}
+
+// Label 标签
+message Label {
+  string name = 1; // 标签名。
+  string value = 2; // 标签值。
+}
+
+// CustomMetrics 自定义指标
+message CustomMetrics {
+  // 指标
+  repeated Metric metrics = 1 [(gogoproto.nullable) = false];
+  // CustomLabels 中的第一个字段是 _group，用来拼接出 007
+  // 的监控项名，保持兼容性。007 监控项名为
+  // metrics_name=pp_trc_$app.$server_$_group。 pp_trc_$app.$server_
+  // 前缀由后台来拼接加上。使用下划线开头，避免与用户标签冲突。
+  repeated Label custom_labels = 2 [(gogoproto.nullable) = false];
+  // 监控项名，原始值，未经 NameToIdentifier 编码。
+  string monitor_name = 3;
+}

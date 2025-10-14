@@ -1,0 +1,180 @@
+code: 0
+msg: success
+target: ""
+config_server:
+register_server:
+self_monitor:
+  protocol: otp
+  collector:
+    addr:
+    telemetry_data: 1
+    data_protocol: 5
+    data_transmission: 1
+    version: 0
+    direct_ip_port: []
+  report_seconds: 10
+metrics_config:
+  enable: true
+  processor:
+    protocol: omp
+    window_seconds: 20
+    clear_seconds: 60
+    expires_seconds: 60
+    point_limit: 200000
+    enable_process_metrics: true
+    process_metrics_seconds: 20
+    histogram_buckets:
+      - name: rpc_server_handled_seconds
+        buckets:
+          - 0.005
+          - 0.01
+          - 0.025
+          - 0.05
+          - 0.1
+          - 0.25
+          - 0.5
+          - 1
+          - 5
+      - name: rpc_client_handled_seconds
+        buckets:
+          - 0.005
+          - 0.01
+          - 0.025
+          - 0.05
+          - 0.1
+          - 0.25
+          - 0.5
+          - 1
+          - 5
+    label_ignores: []
+    ret_code_as_exception: false
+    second_granularitys: []
+    sample_monitors: []
+    rpc_has_two_ips: []
+  exporter:
+    protocol: otp
+    collector:
+      addr:
+      telemetry_data: 1
+      data_protocol: 5
+      data_transmission: 1
+      version: 0
+      direct_ip_port: []
+    thread_count: 10
+    buffer_size: 10000
+    page_size: 200
+    timeout_ms: 10000
+    window_seconds: 20
+    max_retry_count: 1
+    export_to_file: false
+traces_config:
+  enable: true
+  processor:
+    protocol: omp
+    sampler:
+      enable: true
+      fraction: 0
+      error_fraction: 0
+      dyeing: []
+      enable_dyeing: true
+      enable_min_sample: true
+      enable_bloom_dyeing: false
+      bloom_dyeing: []
+      rate_limit: []
+      server:
+        fraction: -1
+        rpc: []
+      client:
+        fraction: -1
+        rpc: []
+    disable_trace_body: true
+    disable_stream_trace_body: true
+    enable_deferred_sample: false
+    deferred_sample_error: false
+    deferred_sample_slow_duration_ms: 1000
+    disable_parent_sampling: false
+    workflow_sampler:
+      sample_count_per_minute: 0
+      max_count_per_minute: 0
+      path_max_count: 0
+      lifetime_sec: 0
+    enable_profile: false
+  exporter:
+    protocol: otlp
+    collector:
+      addr:
+      telemetry_data: 3
+      data_protocol: 1
+      data_transmission: 2
+      version: 0
+      direct_ip_port: []
+    buffer_size: 20480
+    page_size: 512
+    window_seconds: 5
+    packet_size: 2097152
+    export_to_file: false
+logs_config:
+  enable: true
+  processor:
+    protocol: omp
+    only_trace_log: false
+    trace_log_mode: 0
+    level: error
+    enable_recovery: true
+    must_log_traced: false
+    log_traced_type: sample
+  exporter:
+    protocol: otlp
+    collector:
+      addr:
+      telemetry_data: 2
+      data_protocol: 1
+      data_transmission: 2
+      version: 0
+      direct_ip_port: []
+    buffer_size: 20480
+    page_size: 512
+    window_seconds: 5
+    packet_size: 2097152
+    export_to_file: false
+tenant_id: default
+version: -1
+profiles_config:
+  enable: false
+  processor:
+    protocol: omp
+    profile_types:
+      - cpu
+      - heap
+    period_seconds: 60
+    cpu_duration_seconds: 60
+    cpu_profile_rate: 100
+    mutex_profile_fraction: 10
+    block_profile_rate: 100000000
+    enable_delta_profiles: true
+    enable_link_trace: false
+  exporter:
+    protocol: otp
+    collector:
+      addr:
+      telemetry_data: 4
+      data_protocol: 5
+      data_transmission: 1
+      version: 0
+      direct_ip_port: []
+    buffer_size: 5
+    timeout_ms: 5000
+    max_retry_count: 1
+    export_to_file: false
+access_point: 0
+prometheus_push:
+  enable: false
+  url:
+  job: defaultjob
+  interval: 20
+  use_basic_auth: false
+  username: ""
+  password: ""
+  grouping:
+    tps_tenant_id: default
+  http_headers: {}

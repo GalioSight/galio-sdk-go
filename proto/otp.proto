@@ -1,0 +1,126 @@
+// otp: Observability Transmission Protocol 可观测传输协议。
+// 希望尽量高效，减少冗余。
+
+syntax = "proto3";
+package model;
+
+import "gogoproto/gogo.proto";
+import "omp.proto";
+import "ocp.proto";
+
+option go_package = "model";
+option java_package="com.tencent.galileo.proto";
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// Metrics 全部指标，唯一会发送给 metrics collector 的数据包。
+message Metrics {
+  int64 timestamp_ms = 1; // 时间戳，毫秒。
+  NormalLabels normal_labels = 2;
+  repeated ClientMetricsOTP client_metrics = 3;
+  repeated ServerMetricsOTP server_metrics = 4;
+  repeated NormalMetricOTP normal_metrics = 5;
+  repeated CustomMetricsOTP custom_metrics = 6;
+}
+
+// Bucket 直方图的桶
+message Bucket {
+  string range = 1;
+  int64 count = 2;
+}
+
+// Histogram 直方图统计指标。
+// histogram 指标，实际存储时是 3 个指标：
+// {name}_sum
+// {name}_count
+// {name}_bucket{le=""}
+message Histogram {
+  double sum = 1;  // 指标总和，与 count 一起可计算平均值
+  int64 count = 2; // 指标总数量，与 sum 一起可计算平均值
+  repeated Bucket buckets = 3; // 指标数据分桶分布。在不同的实现中分桶方式会不一样。
+}
+
+// Avg 平均值指标，实际存储的时候是 2 个指标
+// {name}_sum
+// {name}_count
+// 是写入时处理的，此处的 name 里面不需要带上_sum, _count。
+message Avg {      // 平均值指标
+  double sum = 1;  // 指标总和，与 count 一起可计算平均值
+  int64 count = 2; // 指标总数量，与 sum 一起可计算平均值
+}
+
+// MetricOTP otp 协议所用的指标。
+message MetricOTP {
+  string name = 1; // 指标名
+  oneof v {
+    double value = 2;        // 一般指标值
+    Avg avg = 3;             //  平均值指标
+    Histogram histogram = 4; //  histogram 指标
+  }
+  Aggregation aggregation = 5; // 指标聚合方式
+}
+
+// ClientMetricsOTP otp 协议客户端上报指标。
+message ClientMetricsOTP {
+  int64 rpc_client_started_total = 1; // 客户端 (主调方上报) 发出的请求量
+  int64 rpc_client_handled_total = 2; // 客户端 (主调方上报) 处理完成的请求量
+  Histogram rpc_client_handled_seconds = 3; // 客户端 (主调方上报) 处理完成的耗时分布，单位：秒
+  RPCLabels rpc_labels = 4; // RPC 指标标签列表
+}
+
+// ServerMetricsOTP otp 协议服务端上报指标。
+message ServerMetricsOTP {
+  int64 rpc_server_started_total = 1; // 客户端 (主调方上报) 发出的请求量
+  int64 rpc_server_handled_total = 2; // 客户端 (主调方上报) 处理完成的请求量
+  Histogram rpc_server_handled_seconds = 3; // 客户端 (主调方上报) 处理完成的耗时分布，单位：秒
+  RPCLabels rpc_labels = 4; // RPC 指标标签列表
+}
+
+// NormalMetricOTP otp 协议一般指标。
+message NormalMetricOTP {
+  MetricOTP metric = 1;
+}
+
+// CustomMetricOTP otp 协议自定义指标。与 NormalMetricOTP 的区别是，多了
+// custom_labels。
+message CustomMetricsOTP {
+  repeated MetricOTP metrics = 1;
+  // CustomLabels 中的第一个字段是 _group，用来拼接出 007 的监控项名，保持兼容性。
+  // 007 监控项名为 metrics_name=pp_trc_$app.$server_$_group。
+  // pp_trc_$app.$server_ 前缀由后台来拼接加上。
+  // 使用下划线开头，避免与用户标签冲突。
+  repeated Label custom_labels = 2;
+  // 监控项名
+  string monitor_name =3;
+}
+
+// MultiTargetMetrics 多服务指标合集（不同 NormalLabels 指标合集）。
+message MultiTargetMetrics {
+  repeated Metrics metrics = 1;
+}
+
+// ProfilesBatch 性能数据集合，
+// 通常一个采集周期采集的所有类型 profile 数据，放到一个 batch 里。
+message ProfilesBatch {
+  // batch 的序列编号
+  int64 sequence = 1;
+  // batch 的开始时间
+  int64 start = 2;
+  // batch 结束时间
+  int64 end = 3;
+  // batch 包含的所有类型的 profile 数据
+  repeated Profile profiles = 4;
+  // 对应 resource 信息
+  Resource resource = 5;
+}
+
+// Profile 性能数据
+message Profile {
+  // profile 名称，如 cpu.pprof、delta-heap.pprof 等。
+  string name = 1;
+  // profile 类型，如 cpu、heap、mutex 等。
+  string type = 2;
+  // profiles 数据，内容为 https://github.com/google/pprof/blob/main/proto/profile.proto。
+  bytes data = 3;
+}

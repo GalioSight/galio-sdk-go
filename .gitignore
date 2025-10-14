@@ -2,5 +2,4 @@
 ._.DS_Store
 *.log
 .ci
-*.pb.go
 /.idea
