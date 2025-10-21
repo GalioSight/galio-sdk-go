@@ -4,4 +4,6 @@
 
 ## 使用示例
 
-[简单示例](https://galiosight.ai/galio-sdk-go/example/simple)
+[简单示例](example/simple)
+
+[全部示例](example)
